@@ -16,13 +16,16 @@ WORKDIR /backend
 
 # Install dependencies
 COPY backend/requirements.txt ./
+
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir uvicorn[standard]
 # Copy the Vue.js app from the previous stage
-COPY --from=builder /app/dist/ /backend/static/
 
 # Add the FastAPI app
 COPY backend/ ./
+
+# Copy the Vue.js app from the previous stage
+COPY --from=builder /app/dist/ /backend/static/
 
 # Run the application
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
