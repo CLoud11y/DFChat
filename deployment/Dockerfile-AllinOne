@@ -1,0 +1,29 @@
+# Stage 1: Build Vue.js frontend
+FROM node:18 AS builder
+WORKDIR /app
+
+# Install dependencies
+COPY vue-chat-gui/package*.json ./
+RUN npm ci
+
+# Build the Vue.js app
+COPY vue-chat-gui/ ./
+RUN npm run build
+
+# Stage 2: Setup the FastAPI backend
+FROM python:3.10
+WORKDIR /backend
+
+# Install dependencies
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir uvicorn[standard]
+# Copy the Vue.js app from the previous stage
+COPY --from=builder /app/dist/ /backend/static/
+
+# Add the FastAPI app
+COPY backend/ ./
+
+# Run the application
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+

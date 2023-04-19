@@ -3,3 +3,4 @@ backend/config.py
 # .vscode
 __pycache__
 node_modules
+backend/static

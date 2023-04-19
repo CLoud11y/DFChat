@@ -16,6 +16,19 @@
 
 ## 安装与运行
 
+### 使用docker启动
+1. 修改backend/config.py中的配置
+
+2. 在根目录 Build docker image
+   ```
+   docker build -t dfchat:0.1 -f deployment/Dockerfile-AllinOne .
+   ```
+3. 运行docker image（这里的80是你的本地端口）
+   ```
+   sudo docker run -d -p 80:8000 dfchat:0.1
+   ```
+4. 打开浏览器，输入http://localhost
+
 ### 前端项目
 
 1. 进入前端项目目录：
@@ -76,6 +89,7 @@
    ```
    uvicorn main:app --reload
    ```
+
 
 ## TODO 列表
 
