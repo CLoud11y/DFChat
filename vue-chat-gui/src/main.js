@@ -4,6 +4,5 @@ import App from './App.vue'
 // Vue.prototype.$http = axios
 
 import './assets/main.css'
-
-createApp(App).mount('#app')
-// createApp(HelloWord).mount('#app')
+const app = createApp(App);
+app.mount("#app");

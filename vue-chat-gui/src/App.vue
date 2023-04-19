@@ -1,8 +1,9 @@
 <template>
   <div id="myapp">
     <div class="chat-container" ref="chatContainer">
+      
       <div class="chat-message" v-for="(message, index) in messages" :key="index" :class="message.type">
-        {{ message.content }}
+          <MarkdownViewer :markdown=message.content />
       </div>
     </div>
     <div class="input-container">
@@ -17,6 +18,7 @@
 <script>
 import { ref, reactive, onMounted, nextTick } from "vue";
 import axios from 'axios'
+import MarkdownViewer from './components/MarkdownViewer.vue';
 
 export default {
   setup() {
@@ -63,8 +65,6 @@ export default {
           scrollToBottom(); // 新增此行
         });
       }
-
-
     }
 
     onMounted(() => {
@@ -78,6 +78,9 @@ export default {
       event.preventDefault(); // 阻止默认事件行为
       this.input += '\n'; // 在当前文本中插入换行符
     },
+  },
+  components: {
+    MarkdownViewer
   }
 }
 </script>
@@ -89,6 +92,7 @@ export default {
   display: flex;
   height: 100vh;
   width: 100%;
+  background-color: rgb(255, 255, 255);
   /* 设置 app 元素的宽度为 100% */
 }
 
@@ -119,26 +123,26 @@ export default {
   margin-bottom: 10px;
   padding: 10px;
   border-radius: 5px;
-  width: 98%;
+  width: fit-content;
   /* 设置 chat-message 元素的宽度为 100% */
   box-sizing: border-box;
   /* 添加 box-sizing 属性 */
 }
 
 .system {
-  /* background-color: #7a7676; */
+  background-color: #7a7676;
   padding: 4px;
   box-sizing: border-box;
-  background-color: #595656;
+  background-color: #f1f1f1;
   border: 1px solid #ccc;
 }
 
 .user {
   padding: 4px;
   box-sizing: border-box;
-  background-color: #7c7878;
+  background-color: #ffffff;
   border: 1px solid #ccc;
-  margin-left: 2%;
+  margin-left:auto;
   text-align: right;
 }
 
