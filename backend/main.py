@@ -3,13 +3,16 @@ from pydantic import BaseModel
 import openai
 from typing import Any, Dict, List
 import logging
+from enums import API_MODE
 from config import api_type, api_url, api_key, api_version, completion_engine_gpt4
 
-
-openai.api_type = api_type
-openai.api_base = api_url
-openai.api_key = api_key
-openai.api_version = api_version
+if api_type == API_MODE.OPEN_AI:
+    raise Exception("OpenAI API is not supported yet")
+elif api_type == API_MODE.AZURE:
+    openai.api_type = api_type.name
+    openai.api_base = api_url
+    openai.api_key = api_key
+    openai.api_version = api_version
 
 
 logging.basicConfig(level=logging.DEBUG)
