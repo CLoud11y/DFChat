@@ -17,7 +17,7 @@ elif api_type == API_MODE.AZURE:
     openai.api_version = api_version
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 app = FastAPI(check_content_type=False)
 api_router = APIRouter()
