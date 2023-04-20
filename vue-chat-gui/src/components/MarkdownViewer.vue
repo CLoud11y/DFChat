@@ -51,7 +51,13 @@ export default {
 .markdown-it-code-copy::after {
   content: "";
 }
-.markdown-body {
+.markdown-body{
   padding: 5px 20px;
+}
+.user .markdown-body  {
+  background-color: inherit;
+}
+.system .markdown-body  {
+  background-color: inherit;
 }
 </style>

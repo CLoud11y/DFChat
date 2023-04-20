@@ -6,7 +6,7 @@
           <MarkdownViewer :markdown=message.content />
       </div>
     </div>
-    <div class="input-container">
+    <div class="bottom-container">
       <textarea class="input" @keydown.shift.enter="handleShiftEnter" v-model="input"
         @keydown.enter.exact.prevent="sendMessage" placeholder="Type your message..." rows="4"></textarea>
       <!-- make the input blue -->
@@ -14,7 +14,6 @@
     </div>
   </div>
 </template>
-
 <script>
 import { ref, reactive, onMounted, nextTick } from "vue";
 import axios from 'axios'
@@ -84,84 +83,78 @@ export default {
   }
 }
 </script>
-
 <style>
 #app {
   font-family: "Avenir", Helvetica, Arial, sans-serif;
   font-size: large;
-  display: flex;
   height: 100vh;
   width: 100%;
-  background-color: rgb(255, 255, 255);
+  background-color: rgb(201, 252, 176);
   /* 设置 app 元素的宽度为 100% */
 }
 
 #myapp {
+  display: flex;
   height: 100%;
   width: 95vw;
   /* 设置 app 元素的宽度为 100% */
-  align-items: center;
   box-sizing: border-box;
   flex-direction: column;
   justify-content: space-between;
-  padding: 20px;
-  /* background-color: #f5f5f5; */
-  max-width: 100%;
+  padding: 20px 0px;
+  background-color: #ffffff;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .chat-container {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
+  flex-grow: 1;
   overflow-y: auto;
-  width: 100%;
-  /* 设置 chat-container 元素的宽度为 100% */
   border-radius: 5px;
+  padding-bottom: 110px;
 }
 
 .chat-message {
   margin-bottom: 10px;
-  padding: 10px;
+  padding: 0px;
+  border: 2px solid #ccc;
   border-radius: 5px;
   width: fit-content;
-  /* 设置 chat-message 元素的宽度为 100% */
+  max-width: 100%;
   box-sizing: border-box;
   /* 添加 box-sizing 属性 */
 }
 
 .system {
   background-color: #7a7676;
-  padding: 4px;
   box-sizing: border-box;
   background-color: #f1f1f1;
-  border: 1px solid #ccc;
 }
 
 .user {
-  padding: 4px;
   box-sizing: border-box;
   background-color: #ffffff;
-  border: 1px solid #ccc;
   margin-left:auto;
   text-align: right;
 }
 
-.input-container {
-  width: 100%;
-  max-width: 600px;
+.bottom-container {
+  height: 100px;
   padding: 10px;
+  width: inherit; 
   box-sizing: border-box;
+  position: fixed;
+  bottom: 0;
+  left: 50%; /* Add left property */
+  transform: translateX(-50%); /* Add transform property */
+  max-width: inherit; 
 }
 
 .input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
   border-radius: 5px;
   outline: none;
-  position: fixed;
-  bottom: 0;
   width: 100%;
-  left: 0;
+  padding: 10px; /* Add some padding to textarea */
+  box-sizing: border-box;
 }
 </style>
