@@ -52,7 +52,7 @@ export default {
   content: "";
 }
 .markdown-body{
-  padding: 5px 20px;
+  padding: 0;
 }
 .user .markdown-body  {
   background-color: inherit;

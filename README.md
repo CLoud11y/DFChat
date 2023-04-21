@@ -1,6 +1,6 @@
 # Vue Chat GUI & FastAPI Backend
 
-中文版 | [English](README_EN.md)
+中文版 | [English](README-EN.md)
 
 这是一个可以自行部署的类似chatGPT功能的BS架构工具，包含一个vue编写的前端和fastapi编写的后端。工具可以使用Azure OpenAI API或者OpenAI API进行对话。
 

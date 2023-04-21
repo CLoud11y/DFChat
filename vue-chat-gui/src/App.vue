@@ -3,7 +3,10 @@
     <div class="chat-container" ref="chatContainer">
       
       <div class="chat-message" v-for="(message, index) in messages" :key="index" :class="message.type">
-          <MarkdownViewer :markdown=message.content />
+        <!-- 使用MarkdownViewer组件显示system类型的消息 -->
+        <MarkdownViewer v-if="message.type === 'system'" :markdown="message.content" />
+        <!-- 直接显示user类型的消息 -->
+        <div v-else class="preserve-spaces">{{ message.content }}</div>
       </div>
     </div>
     <div class="bottom-container">
@@ -106,6 +109,7 @@ export default {
   overflow-y: auto;
   border-radius: 5px;
   padding-bottom: 110px;
+  padding: 0 5px;
 }
 
 .chat-message {
@@ -116,6 +120,7 @@ export default {
   width: fit-content;
   max-width: 100%;
   box-sizing: border-box;
+  padding: 5px 10px;
   /* 添加 box-sizing 属性 */
 }
 
@@ -150,5 +155,9 @@ export default {
   width: 100%;
   padding: 10px; /* Add some padding to textarea */
   box-sizing: border-box;
+}
+
+.preserve-spaces {
+  white-space: pre-wrap;
 }
 </style>
