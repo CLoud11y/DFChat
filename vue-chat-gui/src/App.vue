@@ -15,7 +15,7 @@
   </div>
 </template>
 <script>
-import { ref, reactive, onMounted, nextTick } from "vue";
+import { ref, reactive, watch, nextTick } from "vue";
 import axios from 'axios'
 import MarkdownViewer from './components/MarkdownViewer.vue';
 
@@ -52,21 +52,15 @@ export default {
           const response = axios.post("/api/gpt4", { "query": messagesList }, { headers: headers }).then((response) => {
             console.log(response.data);
             messages.push({ type: "system", content: response.data });
+            nextTick(scrollToBottom);
           });
-          // console.log(response.data);
-          // messages.push({ type: "system", content: response });
         } catch (error) {
           console.error("Error making API call:", error);
         }
-
-
-        nextTick(() => {
-          scrollToBottom(); // 新增此行
-        });
       }
     }
 
-    onMounted(() => {
+    watch(messages, () => {
       scrollToBottom();
     });
 
@@ -135,7 +129,7 @@ export default {
   box-sizing: border-box;
   background-color: #ffffff;
   margin-left:auto;
-  text-align: right;
+  /* text-align: right; */
 }
 
 .bottom-container {
