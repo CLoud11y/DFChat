@@ -109,7 +109,8 @@ export default {
   overflow-y: auto;
   border-radius: 5px;
   padding-bottom: 110px;
-  padding: 0 5px;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 .chat-message {
