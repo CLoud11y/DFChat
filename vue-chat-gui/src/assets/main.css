@@ -1,1 +1,10 @@
 @import './base.css';
+
+#app {
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  font-size: large;
+  height: 100vh;
+  width: 100%;
+  background-color: rgb(201, 252, 176);
+  /* 设置 app 元素的宽度为 100% */
+}

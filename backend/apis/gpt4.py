@@ -11,7 +11,7 @@ from config import completion_engine_gpt4, completion_engine_gpt35
 gpt4_api = APIRouter()
 logger = logging.getLogger(__name__)
 
-@gpt4_api.post("/gpt4")
+@gpt4_api.post("/standard")
 async def process_data(input_data: InputData):
     try:
         logger.debug("input_data: %s", input_data)
@@ -27,8 +27,8 @@ async def process_data(input_data: InputData):
 
         )
         logger.debug("response: %s", response)
-        logger.info(f"Get response with Id:{response['id']},model:{response['model']},usage(comp,prompt,total):{list(response['usage'].values())}")
-        return response['choices'][0]['message']['content']
+        logger.info(f"Get response with Id:{response['id']},model:{response['model']},usage(comp,prompt,total):{list(response['usage'].values())}") # type: ignore
+        return response['choices'][0]['message']['content'] # type: ignore
     except Exception as e:
         logger.exception("openai服务请求出错")
         return "服务器太忙，请重试"
@@ -36,19 +36,22 @@ async def process_data(input_data: InputData):
 
 def gpt4_streamer(request_messages: List[Dict[str,str]]) -> Generator[str, Any, None]:
     try:
+        whole_response : str = ""
         for chunk in openai.ChatCompletion.create(
                     engine=completion_engine_gpt35,
                     messages=request_messages,
                     stream=True,
                 ):
-                    content = chunk["choices"][0].get("delta", {}).get("content")
+                    content = chunk["choices"][0].get("delta", {}).get("content") # type: ignore
                     if content is not None:
+                        whole_response += content
                         yield f"{content}"
+        logger.info("The whole response is %s", whole_response)
     except Exception as e:
         logger.exception("openai服务请求出错")
         yield "服务器太忙，请重试"
 
-@ gpt4_api.post("/gpt4-sse")
+@ gpt4_api.post("/sse")
 async def process_data_sse(input_data: InputData):
     # use Server-Sent Events to send data to client
     logger.debug("input_data: %s", input_data)
@@ -58,7 +61,4 @@ async def process_data_sse(input_data: InputData):
         request_messages.append({"role": role, "content": d.content})
 
     return EventSourceResponse(gpt4_streamer(request_messages))
-    
-
-    # return response['choices'][0]['message']['content']
 

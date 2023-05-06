@@ -4,7 +4,7 @@ from fastapi.responses import RedirectResponse
 import openai
 from typing import Any, Dict, List
 import logging
-from apis import gpt4_api
+from apis import gpt4_api,user_router
 from enums import API_MODE
 from config import api_type, api_url, api_key, api_version
 
@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 app = FastAPI(check_content_type=False)
 
 
-app.include_router(gpt4_api, prefix="/api")
+app.include_router(gpt4_api, prefix="/api/gpt4")
+app.include_router(user_router,prefix="/api/user")
 
 @app.get("/")
 def redirect_to_index():
