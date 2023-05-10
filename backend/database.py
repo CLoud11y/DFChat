@@ -39,7 +39,7 @@ class User(Base):
 
 
 class DialogRecord(Base):
-    __tablename__ = "sessions"
+    __tablename__ = "dialogrecords"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User", back_populates="sessions")

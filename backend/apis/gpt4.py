@@ -1,18 +1,21 @@
 
+import json
 import logging
 from typing import Any, Dict, Generator, List
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 import openai
 from models import InputData
 from sse_starlette.sse import EventSourceResponse
 from config import completion_engine_gpt4, completion_engine_gpt35
+from utils.security import get_current_user
+from database import DialogRecord,User
 
 
 gpt4_api = APIRouter()
 logger = logging.getLogger(__name__)
 
 @gpt4_api.post("/standard")
-async def process_data(input_data: InputData):
+async def process_data(input_data: InputData, user: Dict[str, Any] = Depends(get_current_user)):
     try:
         logger.debug("input_data: %s", input_data)
         requst_messages = []
@@ -21,11 +24,10 @@ async def process_data(input_data: InputData):
             requst_messages.append({"role": role, "content": d.content})
 
         response = openai.ChatCompletion.create(
-        engine=completion_engine_gpt4,
-        # temperature=0.5,
-        messages= requst_messages
-
-        )
+            engine=completion_engine_gpt4,
+            # temperature=0.5,
+            messages= requst_messages
+            )
         logger.debug("response: %s", response)
         logger.info(f"Get response with Id:{response['id']},model:{response['model']},usage(comp,prompt,total):{list(response['usage'].values())}") # type: ignore
         return response['choices'][0]['message']['content'] # type: ignore
@@ -34,11 +36,15 @@ async def process_data(input_data: InputData):
         return "服务器太忙，请重试"
 
 
-def gpt4_streamer(request_messages: List[Dict[str,str]]) -> Generator[str, Any, None]:
+def gpt4_streamer(input_data: InputData,user_name:str) -> Generator[str, Any, None]:
+    request_messages = []
+    for d in input_data.query:
+        request_messages.append({"role": d.type, "content": d.content})
+
     try:
         whole_response : str = ""
         for chunk in openai.ChatCompletion.create(
-                    engine=completion_engine_gpt35,
+                    engine=completion_engine_gpt4,
                     messages=request_messages,
                     stream=True,
                 ):
@@ -47,18 +53,21 @@ def gpt4_streamer(request_messages: List[Dict[str,str]]) -> Generator[str, Any, 
                         whole_response += content
                         yield f"{content}"
         logger.info("The whole response is %s", whole_response)
+        request_messages.append({"role": "assistant", "content": whole_response})
+        if input_data.dialogId:
+            DialogRecord.update_record(int(input_data.dialogId),json.dumps(request_messages,ensure_ascii=False))
+        else:
+            user = User.get_user_by_user_name(user_name)
+            dialog_record = DialogRecord.create_record(user.id,json.dumps(request_messages,ensure_ascii=False))
+            yield f"dialogIdComplexSubfix82jjivmpq90doqjwdoiwq:{str(dialog_record.id)}"
     except Exception as e:
         logger.exception("openai服务请求出错")
         yield "服务器太忙，请重试"
 
 @ gpt4_api.post("/sse")
-async def process_data_sse(input_data: InputData):
+async def process_data_sse(input_data: InputData, user: Dict[str, Any] = Depends(get_current_user)):
     # use Server-Sent Events to send data to client
     logger.debug("input_data: %s", input_data)
-    request_messages = []
-    for d in input_data.query:
-        role = 'assistant' if d.type == 'system' else 'user'
-        request_messages.append({"role": role, "content": d.content})
+    return EventSourceResponse(gpt4_streamer(input_data,user['sub']))
 
-    return EventSourceResponse(gpt4_streamer(request_messages))
 

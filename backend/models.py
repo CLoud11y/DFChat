@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 
 class Query(BaseModel):
@@ -6,4 +6,5 @@ class Query(BaseModel):
     content: str
 
 class InputData(BaseModel):
+    dialogId: Optional[str]
     query: List[Query]

@@ -6,11 +6,10 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 import jwt
 from datetime import datetime, timedelta
+from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 user_router = APIRouter()
-SECRET_KEY = "mysecretkey"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60*24*7
+
 
 # 用户登录请求体模型
 class UserLoginRequest(BaseModel):

@@ -3,8 +3,8 @@
     <div class="chat-container" ref="chatContainer">
 
       <div class="chat-message" v-for="(message, index) in messages" :key="index" :class="message.type">
-        <!-- 使用MarkdownViewer组件显示system类型的消息 -->
-        <MarkdownViewer v-if="message.type === 'system'" :markdown="message.content" />
+        <!-- 使用MarkdownViewer组件显示assistant类型的消息 -->
+        <MarkdownViewer v-if="message.type === 'assistant'" :markdown="message.content" />
         <!-- 直接显示user类型的消息 -->
         <div v-else class="preserve-spaces">{{ message.content }}</div>
       </div>
@@ -24,8 +24,9 @@ import MarkdownViewer from './MarkdownViewer.vue';
 export default {
   setup() {
     const input = ref("");
+    const dialogId =""
     const messages = reactive([
-      // { type: "system", content: "Welcome to the chat!" },
+      // { type: "assistant", content: "Welcome to the chat!" },
     ]);
     const chatContainer = ref(null);
     function scrollToBottom() {
@@ -41,7 +42,7 @@ export default {
       headers: { Accept: 'text/event-stream' },
     });
 
-    return { input, messages, gpt4SSEAPI, chatContainer,scrollToBottom };
+    return { input, messages, gpt4SSEAPI, chatContainer,scrollToBottom,dialogId };
   },
   methods: {
     async sendMessage() {
@@ -58,47 +59,56 @@ export default {
             };
           });
 
-          let msg = reactive({ type: "system", content: "" })
+          let msg = reactive({ type: "assistant", content: "" })
           this.messages.push(msg);
           nextTick(() => { 
             this.scrollToBottom();
           });
-          const response = await this.gpt4SSEAPI.post("/api/gpt4/sse", { "query": messagesList }, {
-            onDownloadProgress: (progressEvent) => {
-              let resText = progressEvent.event.target.responseText
-              let lines = resText.substr(6).split("\r\ndata: ") // 去掉前面的"data: "，然后按照"\r\ndata: "分割
-              let m = ""
-              let ignoreNextLine = false
-              for (let i = 0; i < lines.length; i++) {
-                if(ignoreNextLine){
-                  ignoreNextLine = false
-                  continue
-                }
-                let line_str = lines[i]
-                if(line_str.endsWith("\r\nevent: ping")){   //这是为了解决返回中包含ping的event
-                  line_str = line_str.substr(0, line_str.length - 13)
-                  ignoreNextLine = true
-                }
+            let token = localStorage.getItem('jwtToken');
+            const response = await this.gpt4SSEAPI.post("/api/gpt4/sse", { "query": messagesList,"dialogId":this.dialogId }, {
+              headers: { Authorization: `Bearer ${token}` },
+              onDownloadProgress: (progressEvent) => {
+                let resText = progressEvent.event.target.responseText
+                let lines = resText.substr(6).split("\r\ndata: ") // 去掉前面的"data: "，然后按照"\r\ndata: "分割
+                let m = ""
+                let ignoreNextLine = false
+                for (let i = 0; i < lines.length; i++) {
+                  if(ignoreNextLine){
+                    ignoreNextLine = false
+                    continue
+                  }
+                  let line_str = lines[i]
+                  if(line_str.startsWith("dialogIdComplexSubfix82jjivmpq90doqjwdoiwq:")){ 
+                    this.dialogId = line_str.substr(43).trim()
+                    console.log("dialogId:",this.dialogId)
+                    continue
+                  }
 
-                if (line_str.length >= 2 && line_str.substr(-2) == "\r\n") {  // openai的返回有时会包含一组\r\n，有时会包含两组\r\n，这里会去除掉第二组\r\n
-                  line_str = line_str.substr(0, line_str.length - 2)
+
+                  if(line_str.endsWith("\r\nevent: ping")){   //这是为了解决返回中包含ping的event
+                    line_str = line_str.substr(0, line_str.length - 13)
+                    ignoreNextLine = true
+                  }
+
+                  if (line_str.length >= 2 && line_str.substr(-2) == "\r\n") {  // openai的返回有时会包含一组\r\n，有时会包含两组\r\n，这里会去除掉第二组\r\n
+                    line_str = line_str.substr(0, line_str.length - 2)
+                  }
+                  if (line_str != "") {
+                    m += line_str
+                  } else {
+                    m += "\n" // 对于内容为空的行，应该为原文加一个回车符号
+                  }
                 }
-                if (line_str != "") {
-                  m += line_str
-                } else {
-                  m += "\n" // 对于内容为空的行，应该为原文加一个回车符号
-                }
+                msg.content = m
+                nextTick(() => {
+                  this.scrollToBottom();
+                 });
               }
-              msg.content = m
-              nextTick(() => {
-                this.scrollToBottom();
-               });
-            }
-          });
-          console.log(response);
-        } catch (error) {
-          console.error("Error making API call:", error);
-        }
+            });
+            console.log(response);
+          } catch (error) {
+            console.error("Error making API call:", error);
+          }
       }
     },
     handleShiftEnter(event) {
@@ -154,7 +164,7 @@ export default {
   /* 添加 box-sizing 属性 */
 }
 
-.system {
+.assistant {
   background-color: #7a7676;
   box-sizing: border-box;
   background-color: #f1f1f1;
