@@ -20,7 +20,7 @@ async def process_data(input_data: InputData, user: Dict[str, Any] = Depends(get
         logger.debug("input_data: %s", input_data)
         requst_messages = []
         for d in input_data.query:
-            role = 'assistant' if d.type == 'system' else 'user'
+            role = 'assistant' if d.role == 'system' else 'user'
             requst_messages.append({"role": role, "content": d.content})
 
         response = openai.ChatCompletion.create(
@@ -39,7 +39,7 @@ async def process_data(input_data: InputData, user: Dict[str, Any] = Depends(get
 def gpt4_streamer(input_data: InputData,user_name:str) -> Generator[str, Any, None]:
     request_messages = []
     for d in input_data.query:
-        request_messages.append({"role": d.type, "content": d.content})
+        request_messages.append({"role": d.role, "content": d.content})
 
     try:
         whole_response : str = ""

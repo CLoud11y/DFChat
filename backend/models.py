@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 
 class Query(BaseModel):
-    type: str
+    role: str
     content: str
 
 class InputData(BaseModel):

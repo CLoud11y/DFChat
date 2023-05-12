@@ -73,16 +73,16 @@ class DialogRecord(Base):
     @staticmethod
     def update_record(session_id: int, dialog_content: str):
         session = SessionLocal()
-        session_obj = session.query(DialogRecord).filter(DialogRecord.id == session_id).first()
-        if session_obj:
-            session_obj.dialog_content = dialog_content
+        record = session.query(DialogRecord).filter(DialogRecord.id == session_id).first()
+        if record:
+            record.dialog_content = dialog_content
             session.commit()
-            session.refresh(session_obj)
+            session.refresh(record)
         else:
             session.close()
-            raise Exception("Session not found")
+            raise Exception("Record not found")
         session.close()
-        return session_obj
+        return record
     
     @staticmethod
     def delete_by_id(session_id: int):

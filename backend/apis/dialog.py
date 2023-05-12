@@ -25,16 +25,21 @@ async def get_dialog_record_by_id(dialog_id: int,user: Dict[str, Any] = Depends(
     return dialog_record
 
 
-@dialog_record_router.get("/list/")
+@dialog_record_router.get("/list")
 # create a api to retrive dialog record by user
 async def get_dialog_record_by_user(user: Dict[str, Any] = Depends(get_current_user)):
     dialog_records = DialogRecord.get_record_by_username(user['sub'])
-    return dialog_records
+    record_list = []
+    for dialog_record in dialog_records:
+        record_list.append({"dialog_id":dialog_record.id,"dialog_content":json.loads(dialog_record.dialog_content)})
+    return record_list
 
-@dialog_record_router.delete("/id/")
+@dialog_record_router.delete("/id/{dialog_id}")
 # create a api to delete dialog record by id
 async def delete_dialog_record_by_id(dialog_id: int,user: Dict[str, Any] = Depends(get_current_user)):
     dialog_record = DialogRecord.get_record_by_id(dialog_id)
+    if not dialog_record:
+        raise HTTPException(status_code=404, detail="对话记录不存在")
     if dialog_record.user.username != user['sub']:
         raise HTTPException(status_code=403, detail="你没有权限删除该对话")
     DialogRecord.delete_by_id(dialog_id)
