@@ -1,15 +1,23 @@
 <template>
   <div id="main-window">
     <div id="history-container">
-      <div class="history-message" v-for="(history, index) in histories" :key="'history-' + index">
-        {{ history.content }}
+      <div class="history-item"  @click=createNewDialog() >
+        New dialog
+      </div>
+      <div class="history-item" v-for="(history, index) in histories" :key="index" @click.self=handleHistoryClick(history) @click.right.native="showContextMenu($event,index)" >
+        <context-menu :ref="'contextmenu'+index">
+  <button @click="deleteDialog(history.dialog_id)">删除</button>
+  <button @click="doNothing">取消</button>
+  <!-- Add more menu items here -->
+</context-menu>
+        {{ history.dialog_content[0].content }}...
       </div>
     </div>
     <div class="chat-container" ref="chatContainer">
       <div id="chat-window">
-        <div class="chat-message" v-for="(message, index) in messages" :key="index" :class="message.type">
+        <div class="chat-message" v-for="(message, index) in messages" :key="index" :class="message.role">
           <!-- 使用MarkdownViewer组件显示assistant类型的消息 -->
-          <MarkdownViewer v-if="message.type === 'assistant'" :markdown="message.content" />
+          <MarkdownViewer v-if="message.role === 'assistant'" :markdown="message.content" />
           <!-- 直接显示user类型的消息 -->
           <div v-else class="preserve-spaces">{{ message.content }}</div>
         </div>
@@ -26,20 +34,37 @@
 import { ref, reactive, watch, nextTick } from "vue";
 import axios from 'axios'
 import MarkdownViewer from './MarkdownViewer.vue';
+import ContextMenu from "./ContextMenu.vue";
 
 export default {
   setup() {
     const input = ref("");
     const dialogId = ""
     const messages = reactive([
-      // { type: "assistant", content: "Welcome to the chat!" },
+      // { role: "assistant", content: "Welcome to the chat!" },
+    ]);
+    const histories = reactive([
     ]);
     const chatContainer = ref(null);
+
     function scrollToBottom() {
       if (chatContainer.value) {
         chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
       }
     };
+
+    function getDialogs() {
+      let token = localStorage.getItem('jwtToken');
+      axios.get("/api/dialog/list", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((response) => {
+        console.log(response.data)
+        for (let i = 0; i < response.data.length; i++) {
+          histories.unshift( response.data[i] );
+        }
+      });
+    };
+    getDialogs();
     watch(messages, () => {
       scrollToBottom();
     });
@@ -48,28 +73,25 @@ export default {
       headers: { Accept: 'text/event-stream' },
     });
 
-    const histories = [{ type: "assistant", content: "We111!" },
-    { type: "assistant", content: "We222 chat!" },
-    { type: "assistant", content: "Wel3333chat!" }]
-
     return { input, messages, gpt4SSEAPI, chatContainer, scrollToBottom, dialogId, histories };
   },
   methods: {
     async sendMessage() {
       if (this.input.trim() !== "") {
         const user_content = this.input.trim();
-        this.messages.push({ type: "user", content: user_content });
+        this.messages.push({ role: "user", content: user_content });
         this.input = "";
+        let isNewDialog = this.dialogId == ""
 
         try {
           const messagesList = this.messages.map(message => {
             return {
-              type: message.type,
+              role: message.role,
               content: message.content
             };
           });
 
-          let msg = reactive({ type: "assistant", content: "" })
+          let msg = reactive({ role: "assistant", content: "" })
           this.messages.push(msg);
           nextTick(() => {
             this.scrollToBottom();
@@ -110,11 +132,15 @@ export default {
                 }
               }
               msg.content = m
+
               nextTick(() => {
                 this.scrollToBottom();
               });
             }
           });
+          if(isNewDialog){
+            this.histories.unshift({dialog_id: this.dialogId, dialog_content: JSON.parse(JSON.stringify(this.messages))})
+          }
           console.log(response);
         } catch (error) {
           console.error("Error making API call:", error);
@@ -131,10 +157,49 @@ export default {
       nextTick(() => {
         event.target.selectionStart = event.target.selectionEnd = start + 1; // 将光标移动到新的行
       });
-    }
+    },
+    handleHistoryClick(history) {
+      this.messages.splice(0, this.messages.length);
+      this.dialogId = history.dialog_id;
+      for (let i = 0; i < history.dialog_content.length; i++) {
+        this.messages.push(history.dialog_content[i]);
+      }
+    },
+    createNewDialog() {
+      this.messages.splice(0, this.messages.length);
+      this.dialogId = "";
+    },
+    showContextMenu(event, index) {
+      console.log(event);
+      let contextMenuRef = `contextmenu${index}`;
+      console.log(this.$refs[contextMenuRef].length);
+      this.$refs[contextMenuRef][0].showContextMenu(event);
+    },
+    deleteDialog(id){
+      console.log(id)
+      let token = localStorage.getItem('jwtToken');
+      this.messages.splice(0, this.messages.length);
+      this.dialogId = "";
+      axios.delete(`/api/dialog/id/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then((response) => {
+        console.log(response.data)
+        for (let i = 0; i < this.histories.length; i++) {
+          if(this.histories[i].dialog_id == id){
+            this.histories.splice(i, 1);
+            break;
+          }
+        }
+      });
+    },
+    doNothing(event) {
+      event.preventDefault();
+    },
+
   },
   components: {
-    MarkdownViewer
+    MarkdownViewer,
+    ContextMenu
   }
 }
 </script>
@@ -154,8 +219,13 @@ export default {
   background-color: #0a8c5a;
   box-sizing:border-box;
   padding: 5px;
-  /* overflow-y: scroll; */
+  overflow-y: auto;
   height: 100%;
+}
+
+.history-item{
+  border: rgb(236, 122, 140) 1px double;
+  margin: 2px 0px;
 }
 
 #chat-window {
