@@ -1,8 +1,9 @@
+from typing import List
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, Integer, String, ForeignKey, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, joinedload,subqueryload
 
 # 创建SQLite数据库引擎和会话工厂
 engine = create_engine("sqlite:///mydb.db", pool_size=20, max_overflow=0)
@@ -18,7 +19,7 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     password = Column(String)
     email = Column(String)
-    sessions = relationship("DialogRecord", back_populates="user")
+    dialogs = relationship("DialogRecord", back_populates="user")
 
     @staticmethod
     def get_user_by_user_name(username: str):
@@ -42,25 +43,32 @@ class DialogRecord(Base):
     __tablename__ = "dialogrecords"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    user = relationship("User", back_populates="sessions")
+    user = relationship("User", back_populates="dialogs")
     dialog_content = Column(Text)
 
     @staticmethod
-    def get_record_by_id(session_id: int):
+    def get_record_by_id(session_id: int) -> "DialogRecord":
         session = SessionLocal()
-        session_obj = session.query(DialogRecord).filter(DialogRecord.id == session_id).first()
+        record:DialogRecord = session.query(DialogRecord).filter(DialogRecord.id == session_id).options(joinedload(DialogRecord.user)).first()
         session.close()
-        return session_obj
+        return record
+    
+    @staticmethod
+    def get_record_by_username(username: str) -> List["DialogRecord"]:
+        session = SessionLocal()
+        user = session.query(User).filter(User.username == username).options(subqueryload(User.dialogs)).first()
+        session.close()
+        return user.dialogs
     
     @staticmethod
     def create_record(user_id: int, dialog_content: str):
         session = SessionLocal()
-        session_obj = DialogRecord(user_id=user_id, dialog_content=dialog_content)
-        session.add(session_obj)
+        dialog = DialogRecord(user_id=user_id, dialog_content=dialog_content)
+        session.add(dialog)
         session.commit()
-        session.refresh(session_obj)
+        session.refresh(dialog)
         session.close()
-        return session_obj
+        return dialog
     
     @staticmethod
     def update_record(session_id: int, dialog_content: str):
@@ -75,6 +83,19 @@ class DialogRecord(Base):
             raise Exception("Session not found")
         session.close()
         return session_obj
+    
+    @staticmethod
+    def delete_by_id(session_id: int):
+        session = SessionLocal()
+        session_obj = session.query(DialogRecord).filter(DialogRecord.id == session_id).first()
+        if session_obj:
+            session.delete(session_obj)
+            session.commit()
+        else:
+            session.close()
+            raise Exception("Session not found")
+        session.close()
+        return True
 
 
 # 创建数据库表

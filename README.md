@@ -89,7 +89,11 @@
    ```
    uvicorn main:app --reload
    ```
-
+6. API页面：
+   
+      ```
+      http://localhost:8000/docs
+      ```
 
 ## TODO 列表
 
