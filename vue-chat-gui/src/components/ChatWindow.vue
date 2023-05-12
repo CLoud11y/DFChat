@@ -146,6 +146,7 @@ export default {
   max-width: 1200px;
   box-sizing: border-box;
   padding: 10px 5px;
+  
 }
 
 #history-container {
@@ -161,7 +162,6 @@ export default {
   /* 设置 app 元素的宽度为 100% */
   min-height: 100%;
   box-sizing: border-box;
-  flex-direction: column;
   justify-content: space-between;
   padding: 20px 0px;
   background-color: #ffffff;
@@ -206,7 +206,8 @@ export default {
 .bottom-container {
   height: 100px;
   padding: 0 10px;
-  width: calc(100% - 220px); ;
+  width: calc(100% - 220px);
+  max-width: 980px;
   box-sizing: border-box;
   position: absolute;
   bottom: 0;
@@ -214,7 +215,6 @@ export default {
   /* Add left property */
   /* transform: translateX(0); */
   /* Add transform property */
-  max-width: inherit;
 }
 
 .input {
