@@ -54,10 +54,10 @@ export default {
 .markdown-body{
   padding: 0;
 }
-.user .markdown-body  {
+/* .user .markdown-body  {
   background-color: inherit;
-}
-.system .markdown-body  {
+} */
+.markdown-body  {
   background-color: inherit;
 }
 </style>

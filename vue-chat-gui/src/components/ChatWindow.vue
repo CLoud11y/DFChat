@@ -101,6 +101,13 @@ export default {
             headers: { Authorization: `Bearer ${token}` },
             onDownloadProgress: (progressEvent) => {
               let resText = progressEvent.event.target.responseText
+              if(resText.includes("Invalid authentication credentials")){
+                localStorage.removeItem('jwtToken')
+                localStorage.removeItem('username')
+                localStorage.removeItem('expirationDate')
+                this.$router.push({ path: '/' })
+              }
+
               let lines = resText.substr(6).split("\r\ndata: ") // 去掉前面的"data: "，然后按照"\r\ndata: "分割
               let m = ""
               let ignoreNextLine = false
@@ -116,6 +123,10 @@ export default {
                   continue
                 }
 
+                if(line_str.startsWith(" ping")){ // 处理起始行的"event: ping",但是前面有一个substr(6),所以
+                  ignoreNextLine = true
+                  continue
+                }
 
                 if (line_str.endsWith("\r\nevent: ping")) {   //这是为了解决返回中包含ping的event
                   line_str = line_str.substr(0, line_str.length - 13)
@@ -261,7 +272,6 @@ export default {
 }
 
 .assistant {
-  background-color: #7a7676;
   box-sizing: border-box;
   background-color: #f1f1f1;
 }

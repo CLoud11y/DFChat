@@ -16,7 +16,7 @@
 
 ## 安装与运行
 
-### 使用docker启动
+### 使用docker启动前后端(推荐)
 1. 修改backend/config.py中的配置
 
 2. 在根目录 Build docker image
@@ -26,10 +26,11 @@
 3. 运行docker image（这里的80是你的本地端口）
    ```
    sudo docker run -d -p 80:8000 dfchat:0.1
+   sudo docker run -d -v /yourdbpath/mydb.db:/backend/mydb.db  -p 80:8000 dfchat:0.2
    ```
 4. 打开浏览器，输入http://localhost
 
-### 前端项目
+### 启动前端项目
 
 1. 进入前端项目目录：
 
@@ -49,7 +50,7 @@
    npm run dev
    ```
 
-### 后端项目
+### 启动后端项目
 
 1. 安装Python虚拟环境：
 
@@ -98,7 +99,7 @@
 ## TODO 列表
 
 - [ ] 实现用户注册和登录功能
-- [ ] 对话记录功能
+- [x] 对话记录功能
 - [ ] 对话导出功能
 - [ ] API费用统计功能
 
