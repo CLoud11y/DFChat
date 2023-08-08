@@ -6,10 +6,10 @@
       </div>
       <div class="history-item" v-for="(history, index) in histories" :key="index" @click.self=handleHistoryClick(history) @click.right.native="showContextMenu($event,index)" >
         <context-menu :ref="'contextmenu'+index">
-  <button @click="deleteDialog(history.dialog_id)">删除</button>
-  <button @click="doNothing">取消</button>
-  <!-- Add more menu items here -->
-</context-menu>
+          <button @click="deleteDialog(history.dialog_id)">删除</button>
+          <button @click="doNothing">取消</button>
+          <!-- Add more menu items here -->
+        </context-menu>
         {{ history.dialog_content[0].content }}...
       </div>
     </div>
