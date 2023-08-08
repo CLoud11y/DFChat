@@ -24,7 +24,7 @@ async def process_data(input_data: InputData, user: Dict[str, Any] = Depends(get
             requst_messages.append({"role": role, "content": d.content})
 
         response = openai.ChatCompletion.create(
-            engine=completion_engine_gpt4,
+            engine=completion_engine_gpt35,
             # temperature=0.5,
             messages= requst_messages
             )
@@ -44,7 +44,7 @@ def gpt4_streamer(input_data: InputData,user_name:str) -> Generator[str, Any, No
     try:
         whole_response : str = ""
         for chunk in openai.ChatCompletion.create(
-                    engine=completion_engine_gpt4,
+                    engine=completion_engine_gpt35,
                     messages=request_messages,
                     stream=True,
                 ):
