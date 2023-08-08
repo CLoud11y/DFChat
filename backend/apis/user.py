@@ -1,15 +1,18 @@
-from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from database import User, DialogRecord
 from fastapi import FastAPI, APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel
 import jwt
 from datetime import datetime, timedelta
 from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 user_router = APIRouter()
 
+# 用户注册请求体模型
+class UserSignupRequest(BaseModel):
+    username: str
+    password: str
+    email: str
 
 # 用户登录请求体模型
 class UserLoginRequest(BaseModel):
@@ -37,6 +40,17 @@ async def login(user_login_request: UserLoginRequest):
         return {"access_token": access_token}
     else:
         raise HTTPException(status_code=400, detail="用户名或密码错误")
+    
+# 用户注册API
+@user_router.post("/signup")
+async def signup(user_signup_request: UserSignupRequest):
+    user_check = User.get_user_by_user_name(user_signup_request.username)
+    if user_check is None:
+        user = User.create_user(user_signup_request.username, user_signup_request.password, user_signup_request.email)
+        access_token = create_access_token(data={"sub": user.username}, expires_delta=ACCESS_TOKEN_EXPIRE_MINUTES)
+        return {"access_token": access_token}
+    else:
+        raise HTTPException(status_code=400, detail="用户名已存在")
 
 # 获取用户信息API
 @user_router.get("/users/{username}")

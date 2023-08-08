@@ -11,6 +11,7 @@
                 <input type="password" id="password" v-model="password" placeholder="Enter password" class="input-field">
             </div>
             <button type="submit" @click.prevent="login">Login</button>
+            <button type="submit" @click.prevent="signup">Signup</button>
         </form>
     </div>
 </template>
@@ -33,6 +34,31 @@ export default {
                 const response = await axios.post('/api/user/login', {
                     username: this.username,
                     password: this.password
+                });
+                console.log(response);
+                localStorage.setItem('jwtToken', response.data.access_token);
+                const decodedToken = jwt_decode(response.data.access_token);
+                const username = decodedToken.sub;
+                const expirationDate = decodedToken.exp;
+                const date = new Date(expirationDate * 1000);
+                localStorage.setItem('username', username);
+                localStorage.setItem('expirationDate', date);
+                console.log(username, expirationDate);
+                // handle successful login
+                this.$emit('loggedIn')
+            } catch (error) {
+                console.error(error);
+                //pop up a toast
+                // handle login error
+            }
+        },
+
+        async signup() {
+            try {
+                const response = await axios.post('/api/user/signup', {
+                    username: this.username,
+                    password: this.password,
+                    email: '',
                 });
                 console.log(response);
                 localStorage.setItem('jwtToken', response.data.access_token);
