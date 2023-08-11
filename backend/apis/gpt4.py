@@ -67,9 +67,7 @@ def gpt4_streamer(input_data: InputData,user_name:str) -> Generator[str, Any, No
 
 def langchain_streamer(input_data: InputData,user_name:str) -> Generator[str, Any, None]:
     chat_history = input_data.query[:-1]
-    request_messages = []
-    for d in input_data.query:
-        request_messages.append({"role": d.role, "content": d.content})
+    request_messages = [{"role": d.role, "content": d.content} for d in input_data.query]
     message = request_messages[-1]["content"]
     try:
         myAgent = MyAgent(chat_history=chat_history)
