@@ -1,14 +1,10 @@
 
 import json
 import logging
-from typing import Any, Dict, Generator, List
+from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException
-import openai
-from models import InputData
-from sse_starlette.sse import EventSourceResponse
-from config import completion_engine_gpt4, completion_engine_gpt35
 from utils.security import get_current_user
-from database import DialogRecord,User
+from database import DialogRecord
 
 
 dialog_record_router = APIRouter()

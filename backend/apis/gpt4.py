@@ -32,7 +32,7 @@ async def process_data(input_data: InputData, user: Dict[str, Any] = Depends(get
         logger.info(f"Get response with Id:{response['id']},model:{response['model']},usage(comp,prompt,total):{list(response['usage'].values())}") # type: ignore
         return response['choices'][0]['message']['content'] # type: ignore
     except Exception as e:
-        logger.exception("openai服务请求出错")
+        logger.exception(f"出错: {e}")
         return "服务器太忙，请重试"
 
 
@@ -61,7 +61,7 @@ def gpt4_streamer(input_data: InputData,user_name:str) -> Generator[str, Any, No
             dialog_record = DialogRecord.create_record(user.id,json.dumps(request_messages,ensure_ascii=False))
             yield f"dialogIdComplexSubfix82jjivmpq90doqjwdoiwq:{str(dialog_record.id)}"
     except Exception as e:
-        logger.exception("openai服务请求出错")
+        logger.exception(f"出错: {e}")
         yield "服务器太忙，请重试"
 
 
@@ -84,7 +84,7 @@ def langchain_streamer(input_data: InputData,user_name:str) -> Generator[str, An
             dialog_record = DialogRecord.create_record(user.id,json.dumps(request_messages,ensure_ascii=False))
             yield f"dialogIdComplexSubfix82jjivmpq90doqjwdoiwq:{str(dialog_record.id)}"
     except Exception as e:
-        logger.exception("openai服务请求出错")
+        logger.exception(f"出错: {e}")
         yield "服务器太忙，请重试"
 
 @ gpt4_api.post("/sse")
