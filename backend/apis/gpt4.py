@@ -1,14 +1,14 @@
-
 import json
 import logging
-from typing import Any, Dict, Generator, List
+from typing import Any, Dict, Generator
 from fastapi import APIRouter, Depends
 import openai
 from models import InputData
 from sse_starlette.sse import EventSourceResponse
-from config import completion_engine_gpt4, completion_engine_gpt35
+from config import completion_engine_gpt35
 from utils.security import get_current_user
 from database import DialogRecord,User
+from my_langchain import MyAgent
 
 
 gpt4_api = APIRouter()
@@ -64,10 +64,33 @@ def gpt4_streamer(input_data: InputData,user_name:str) -> Generator[str, Any, No
         logger.exception("openai服务请求出错")
         yield "服务器太忙，请重试"
 
+
+def langchain_streamer(input_data: InputData,user_name:str) -> Generator[str, Any, None]:
+    chat_history = input_data.query[:-1]
+    request_messages = []
+    for d in input_data.query:
+        request_messages.append({"role": d.role, "content": d.content})
+    message = request_messages[-1]["content"]
+    try:
+        myAgent = MyAgent(chat_history=chat_history)
+        whole_response = myAgent.run(message)
+        yield whole_response
+        logger.info("The whole response is %s", whole_response)
+        request_messages.append({"role": "assistant", "content": whole_response})
+        if input_data.dialogId:
+            DialogRecord.update_record(int(input_data.dialogId),json.dumps(request_messages,ensure_ascii=False))
+        else:
+            user = User.get_user_by_user_name(user_name)
+            dialog_record = DialogRecord.create_record(user.id,json.dumps(request_messages,ensure_ascii=False))
+            yield f"dialogIdComplexSubfix82jjivmpq90doqjwdoiwq:{str(dialog_record.id)}"
+    except Exception as e:
+        logger.exception("openai服务请求出错")
+        yield "服务器太忙，请重试"
+
 @ gpt4_api.post("/sse")
 async def process_data_sse(input_data: InputData, user: Dict[str, Any] = Depends(get_current_user)):
     # use Server-Sent Events to send data to client
     logger.debug("input_data: %s", input_data)
-    return EventSourceResponse(gpt4_streamer(input_data,user['sub']))
+    return EventSourceResponse(langchain_streamer(input_data,user['sub']))
 
 
