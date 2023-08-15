@@ -22,14 +22,30 @@ tools = load_tools(["llm-math","openweathermap-api"], llm=llm)
 
 
 class MyAgent():
-    def __init__(self, chat_history: List[Query], verbose=False) -> None:
+    def __init__(self, chat_history: List[Query], verbose=False, handle_parsing_errors=False) -> None:
+        '''
+        handle_parsing_errors:
+        Defaults to False, which raises the error.
+        If true, the error will be sent back to the LLM as an observation. 
+        If a string, the string itself will be sent to the LLM as an observation. 
+        If a callable function, the function will be called with the exception
+        '''
         self.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
         for query in chat_history:
             if query.role == "assistant":
                 self.memory.chat_memory.add_ai_message(query.content)
             else:
                 self.memory.chat_memory.add_user_message(query.content)
-        self.agent_chain = initialize_agent(tools, llm, agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION, verbose=verbose, memory=self.memory)
+        
+        self.agent_chain = initialize_agent(
+            tools, 
+            llm, 
+            agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION, 
+            verbose=verbose, 
+            memory=self.memory, 
+            handle_parsing_errors=handle_parsing_errors
+        )
+    
     
     def run(self, input: str) -> str:
         return self.agent_chain.run(input=input)
