@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 from typing import Any, Dict, Generator
 from fastapi import APIRouter, Depends
 import openai
@@ -89,6 +90,30 @@ def langchain_streamer(input_data: InputData,user_name:str) -> Generator[str, An
 async def process_data_sse(input_data: InputData, user: Dict[str, Any] = Depends(get_current_user)):
     # use Server-Sent Events to send data to client
     logger.debug("input_data: %s", input_data)
-    return EventSourceResponse(langchain_streamer(input_data,user['sub']))
+    # return EventSourceResponse(langchain_streamer(input_data,user['sub']))
+    # for vue test
+    return EventSourceResponse(vue_test(input_data,user['sub']))
 
 
+def vue_test(input_data: InputData,user_name:str) -> Generator[str, Any, None]:
+    '''for vue test. this method return the user input without using LLM'''
+    time.sleep(3)
+    request_messages = []
+    for d in input_data.query:
+        request_messages.append({"role": d.role, "content": d.content})
+    try:
+        whole_response:str = ""
+        for token in input_data.query[-1].content:
+            whole_response += token
+            yield f"{token}"
+        logger.info("The whole response is %s", whole_response)
+        request_messages.append({"role": "assistant", "content": whole_response})
+        if input_data.dialogId:
+            DialogRecord.update_record(int(input_data.dialogId),json.dumps(request_messages,ensure_ascii=False))
+        else:
+            user = User.get_user_by_user_name(user_name)
+            dialog_record = DialogRecord.create_record(user.id,json.dumps(request_messages,ensure_ascii=False))
+            yield f"dialogIdComplexSubfix82jjivmpq90doqjwdoiwq:{str(dialog_record.id)}"
+    except Exception as e:
+        logger.exception(f"出错: {e}")
+        yield "服务器太忙，请重试"
