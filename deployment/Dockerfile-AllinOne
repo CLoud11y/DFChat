@@ -4,7 +4,9 @@ WORKDIR /app
 
 # Install dependencies
 COPY vue-chat-gui/package*.json ./
-RUN npm ci
+# `npm ci` can only install packages when your package.json and package-lock.json or npm-shrinkwrap.json are in sync.
+# RUN npm ci
+RUN npm install
 
 # Build the Vue.js app
 COPY vue-chat-gui/ ./
