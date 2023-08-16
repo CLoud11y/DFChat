@@ -70,7 +70,7 @@ def langchain_streamer(input_data: InputData,user_name:str) -> Generator[str, An
     request_messages = [{"role": d.role, "content": d.content} for d in input_data.query]
     message = request_messages[-1]["content"]
     try:
-        myAgent = MyAgent(chat_history=chat_history)
+        myAgent = MyAgent(chat_history=chat_history, handle_parsing_errors=True)
         whole_response = myAgent.run(message)
         yield whole_response
         logger.info("The whole response is %s", whole_response)
