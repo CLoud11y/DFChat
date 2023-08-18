@@ -45,6 +45,7 @@ class DialogRecord(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User", back_populates="dialogs")
     dialog_content = Column(Text)
+    file_path = Column(Text)
 
     @staticmethod
     def get_record_by_id(session_id: int) -> "DialogRecord":
@@ -61,9 +62,9 @@ class DialogRecord(Base):
         return user.dialogs
     
     @staticmethod
-    def create_record(user_id: int, dialog_content: str):
+    def create_record(user_id: int, dialog_content: str, file_path: str|None = None):
         session = SessionLocal()
-        dialog = DialogRecord(user_id=user_id, dialog_content=dialog_content)
+        dialog = DialogRecord(user_id=user_id, dialog_content=dialog_content, file_path=file_path)
         session.add(dialog)
         session.commit()
         session.refresh(dialog)
@@ -71,11 +72,12 @@ class DialogRecord(Base):
         return dialog
     
     @staticmethod
-    def update_record(session_id: int, dialog_content: str):
+    def update_record(session_id: int, dialog_content: str, file_path: str|None = None):
         session = SessionLocal()
         record = session.query(DialogRecord).filter(DialogRecord.id == session_id).first()
         if record:
             record.dialog_content = dialog_content
+            record.file_path = file_path
             session.commit()
             session.refresh(record)
         else:
