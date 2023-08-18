@@ -13,6 +13,9 @@
         {{ history.dialog_content[0].content }}...
       </div>
     </div>
+
+
+    
     <div class="chat-container" ref="chatContainer">
       <div id="chat-window">
         <div class="chat-message" v-for="(message, index) in messages" :key="index" :class="message.role">
