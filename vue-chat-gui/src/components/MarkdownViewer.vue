@@ -6,7 +6,6 @@
 import MarkdownIt from 'markdown-it';
 import markdownItCodeCopy from 'markdown-it-code-copy';
 import 'github-markdown-css/github-markdown.css';
-import { watch } from 'vue';
 export default {
   props: {
       markdown: {
@@ -21,12 +20,7 @@ export default {
       timer:null
     };
   },
-  // watch:{
-  //  markdownContent:function(){
-  //   this.show = false
-  //   console.log('@@@@@@@@@值改变了 准备取消定时器')
-  //  }
-  // },
+ 
   computed: {
     markdownContent() {
       return this.md.render(this.markdown);
