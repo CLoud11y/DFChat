@@ -1,1 +1,1 @@
-from .my_agent import MyAgent
+from .my_agent import MyAgent, QAChain

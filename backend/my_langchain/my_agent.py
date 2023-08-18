@@ -1,8 +1,15 @@
 from langchain.chat_models import AzureChatOpenAI
 from langchain.agents import load_tools, initialize_agent, AgentType
 from langchain.memory import ConversationBufferMemory
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.vectorstores import Chroma
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.document_loaders import PyPDFDirectoryLoader
+from langchain.chains import ConversationalRetrievalChain
+from langchain.vectorstores.base import VectorStoreRetriever
 from typing import List
 from models import Query
+from database import DialogRecord
 from config import (
     api_key,
     api_url,
@@ -49,3 +56,25 @@ class MyAgent():
     
     def run(self, input: str) -> str:
         return self.agent_chain.run(input=input)
+    
+
+class QAChain():
+    def __init__(self, chat_history: List[Query], dialog_id : str) -> None:
+        dialog = DialogRecord.get_record_by_id(int(dialog_id))
+        path = dialog.file_path
+        loader = PyPDFDirectoryLoader(path=path)
+        texts = loader.load_and_split(text_splitter=CharacterTextSplitter(chunk_size=1000, chunk_overlap=0))
+        embeddings = OpenAIEmbeddings(deployment="textembeddingada002")
+        docsearch = Chroma.from_documents(texts, embeddings)
+        retriever = VectorStoreRetriever(vectorstore=docsearch)
+
+        self.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+        for query in chat_history:
+            if query.role == "assistant":
+                self.memory.chat_memory.add_ai_message(query.content)
+            else:
+                self.memory.chat_memory.add_user_message(query.content)
+        self.qa = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, chain_type="stuff", memory=self.memory)
+
+    def run(self, input: str) -> str:
+        return self.qa.run(input)
