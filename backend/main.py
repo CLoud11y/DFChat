@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 import openai
 import logging
-from apis import gpt4_api,user_router,dialog_record_router
+from apis import gpt4_api,user_router,dialog_record_router, upload_api
 from enums import API_MODE
 from config import api_type, api_url, api_key, api_version
 
@@ -24,6 +24,7 @@ app = FastAPI(check_content_type=False)
 app.include_router(gpt4_api, prefix="/api/gpt4")
 app.include_router(user_router,prefix="/api/user")
 app.include_router(dialog_record_router,prefix="/api/dialog")
+app.include_router(upload_api, prefix="/api/upload")
 
 @app.get("/")
 def redirect_to_index():

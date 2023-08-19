@@ -9,7 +9,7 @@ from sse_starlette.sse import EventSourceResponse
 from config import completion_engine_gpt35
 from utils.security import get_current_user
 from database import DialogRecord,User
-from my_langchain import MyAgent
+from my_langchain import MyAgent, QAChain
 
 
 gpt4_api = APIRouter()
@@ -71,7 +71,11 @@ def langchain_streamer(input_data: InputData,user_name:str) -> Generator[str, An
     request_messages = [{"role": d.role, "content": d.content} for d in input_data.query]
     message = request_messages[-1]["content"]
     try:
-        myAgent = MyAgent(chat_history=chat_history, handle_parsing_errors=True)
+        # just for testing
+        if request_messages[-2]["content"] == "All files have been uploaded successfully! Ask questions about them":
+            myAgent = QAChain(chat_history=chat_history, dialog_id = input_data.dialogId)
+        else:
+            myAgent = MyAgent(chat_history=chat_history, handle_parsing_errors=True)
         whole_response = myAgent.run(message)
         yield whole_response
         logger.info("The whole response is %s", whole_response)
@@ -86,16 +90,8 @@ def langchain_streamer(input_data: InputData,user_name:str) -> Generator[str, An
         logger.exception(f"出错: {e}")
         yield "服务器太忙，请重试"
 
-@ gpt4_api.post("/sse")
-async def process_data_sse(input_data: InputData, user: Dict[str, Any] = Depends(get_current_user)):
-    # use Server-Sent Events to send data to client
-    logger.debug("input_data: %s", input_data)
-    # return EventSourceResponse(langchain_streamer(input_data,user['sub']))
-    # for vue test
-    return EventSourceResponse(vue_test(input_data,user['sub']))
 
-
-def vue_test(input_data: InputData,user_name:str) -> Generator[str, Any, None]:
+def vue_test(input_data: InputData, user_name:str) -> Generator[str, Any, None]:
     '''for vue test. this method return the user input without using LLM'''
     time.sleep(3)
     request_messages = []
@@ -117,3 +113,13 @@ def vue_test(input_data: InputData,user_name:str) -> Generator[str, Any, None]:
     except Exception as e:
         logger.exception(f"出错: {e}")
         yield "服务器太忙，请重试"
+
+
+@ gpt4_api.post("/sse")
+async def process_data_sse(input_data: InputData, user: Dict[str, Any] = Depends(get_current_user)):
+    # use Server-Sent Events to send data to client
+    logger.debug("input_data: %s", input_data)
+    # response_generator = langchain_streamer(input_data,user['sub'])
+    # for vue test
+    response_generator = vue_test(input_data,user['sub'])
+    return EventSourceResponse(response_generator)

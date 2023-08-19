@@ -1,7 +1,6 @@
 from pydantic import BaseModel
-from database import User, DialogRecord
-from fastapi import FastAPI, APIRouter, Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from database import User
+from fastapi import APIRouter, HTTPException
 import jwt
 from datetime import datetime, timedelta
 from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
