@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, UploadFile
+from fastapi import APIRouter, Depends
 from typing import Any, Dict, List
 from utils.security import get_current_user
-from models import InputData
+from models import InputData, InputFiles
 from database import DialogRecord, User
 from config import base_dir
 import logging
@@ -13,11 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 @upload_api.post("/upload_files")
-async def upload_files(files: List[UploadFile] | None, input_data: InputData, user: Dict[str, Any] = Depends(get_current_user)):
+async def upload_files(input_files: InputFiles, user: Dict[str, Any] = Depends(get_current_user)):
     '''
     save upload files to {base_dir}/upload_files/{user_name}/
     return dialogId
     '''
+    files = input_files.files
+    input_data = input_files.input_data
     user_name = user['sub']
     user = User.get_user_by_user_name(user_name)
     # make a dirctory for user according to user_name
