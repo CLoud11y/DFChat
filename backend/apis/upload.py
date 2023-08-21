@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, Form
 from typing import Any, Dict
 from utils.security import get_current_user
 from models import InputFiles, Query
@@ -7,6 +7,9 @@ from config import base_dir
 import logging
 import os
 import json
+from typing import List, Optional
+from fastapi import UploadFile
+from models import InputData
 
 upload_api = APIRouter()
 logger = logging.getLogger(__name__)
@@ -25,7 +28,7 @@ async def upload_files(input_files: InputFiles, user: Dict[str, Any] = Depends(g
     # make a dirctory for user according to user_name
     save_dir = base_dir + "upload_files/" + user_name + "/"
     if not os.path.exists(save_dir):
-        os.makedirs(save_dir) 
+        os.makedirs(save_dir)
     # save all files
     for each in files:
         save_path = save_dir + each.filename
@@ -34,12 +37,20 @@ async def upload_files(input_files: InputFiles, user: Dict[str, Any] = Depends(g
             f.write(content)
     # append the messages saying that files have been uploaded
     request_messages = [d.serialize() for d in input_data.query]
-    request_messages.append(Query(role="assistant", content="All files have been uploaded successfully! Ask questions about them").serialize())
+    request_messages.append(Query(
+        role="assistant", content="All files have been uploaded successfully! Ask questions about them").serialize())
     if input_data.dialogId:
-        DialogRecord.update_record(int(input_data.dialogId), json.dumps(request_messages,ensure_ascii=False), file_path=save_dir)
+        DialogRecord.update_record(int(input_data.dialogId), json.dumps(
+            request_messages, ensure_ascii=False), file_path=save_dir)
         return input_data.dialogId
     else:
-        dialog_record = DialogRecord.create_record(user.id, json.dumps(request_messages,ensure_ascii=False), file_path=save_dir)
+        dialog_record = DialogRecord.create_record(user.id, json.dumps(
+            request_messages, ensure_ascii=False), file_path=save_dir)
         return str(dialog_record.id)
-    
-    
+
+
+@upload_api.post("/upload_test")
+async def upload_test(input_files: bytes = File(...), user: Dict[str, Any] = Depends(get_current_user)):
+    logger.debug(input_files)
+    logger.debug(type(input_files))
+    return "success"
