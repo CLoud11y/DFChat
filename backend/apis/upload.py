@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
-from typing import Any, Dict, List
+from typing import Any, Dict
 from utils.security import get_current_user
-from models import InputData, InputFiles
+from models import InputFiles, Query
 from database import DialogRecord, User
 from config import base_dir
 import logging
@@ -33,8 +33,8 @@ async def upload_files(input_files: InputFiles, user: Dict[str, Any] = Depends(g
         with open(save_path, "wb") as f:
             f.write(content)
     # append the messages saying that files have been uploaded
-    request_messages = [{"role": d.role, "content": d.content} for d in input_data.query]
-    request_messages.append({"role": "assistant", "content": "All files have been uploaded successfully! Ask questions about them"})
+    request_messages = [d.serialize() for d in input_data.query]
+    request_messages.append(Query(role="assistant", content="All files have been uploaded successfully! Ask questions about them").serialize())
     if input_data.dialogId:
         DialogRecord.update_record(int(input_data.dialogId), json.dumps(request_messages,ensure_ascii=False), file_path=save_dir)
         return input_data.dialogId

@@ -5,6 +5,8 @@ from fastapi import UploadFile
 class Query(BaseModel):
     role: str
     content: str
+    def serialize(self):
+        return {"role": self.role, "content": self.content}
 
 class InputData(BaseModel):
     dialogId: Optional[str]
