@@ -13,6 +13,9 @@
         {{ history.dialog_content[0].content }}...
       </div>
     </div>
+
+
+    
     <div class="chat-container" ref="chatContainer">
       <div id="chat-window">
         <div class="chat-message" v-for="(message, index) in messages" :key="index" :class="message.role">
@@ -25,7 +28,11 @@
       <div class="bottom-container">
         <textarea class="input" @keydown.shift.enter="handleShiftEnter" v-model="input"
           @keydown.enter.exact.prevent="sendMessage" placeholder="Type your message..." rows="4"></textarea>
-
+         
+        <div class="wenjian">     <label>选择文件
+   
+      </label>    <input type="file" multiple @change="handleFileUpload($event)"/>
+         <button v-on:click="submitFiles()">上传</button></div>
       </div>
     </div>
   </div>
@@ -39,7 +46,8 @@ import ContextMenu from "./ContextMenu.vue";
 export default {
   setup() {
     const input = ref("");
-    const dialogId = ""
+    const dialogId = "";
+    const files = [];
     const messages = reactive([
       // { role: "assistant", content: "Welcome to the chat!" },
     ]);
@@ -50,6 +58,7 @@ export default {
     function scrollToBottom() {
       if (chatContainer.value) {
         chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+        console.log('消息拉到底')
       }
     };
 
@@ -65,15 +74,14 @@ export default {
       });
     };
     getDialogs();
-    watch(messages, () => {
-      scrollToBottom();
-    });
+  
+    
     const gpt4SSEAPI = axios.create({
       baseURL: '', // 替换成你的API服务器的URL
       headers: { Accept: 'text/event-stream' },
     });
 
-    return { input, messages, gpt4SSEAPI, chatContainer, scrollToBottom, dialogId, histories };
+    return { input, messages, gpt4SSEAPI, chatContainer, scrollToBottom, dialogId, histories,files };
   },
   methods: {
     async sendMessage() {
@@ -170,11 +178,13 @@ export default {
       });
     },
     handleHistoryClick(history) {
+               this.scrollToBottom();
       this.messages.splice(0, this.messages.length);
       this.dialogId = history.dialog_id;
       for (let i = 0; i < history.dialog_content.length; i++) {
         this.messages.push(history.dialog_content[i]);
       }
+  
     },
     createNewDialog() {
       this.messages.splice(0, this.messages.length);
@@ -206,12 +216,65 @@ export default {
     doNothing(event) {
       event.preventDefault();
     },
+    handleFileUpload(event) {
+      this.files = event.target.files;
+       console.log(this.files)
+    },
+    async submitFiles() {
+        const messagesList = this.messages.map(message => {
+            return {
+              role: message.role,
+              content: message.content
+            };
+          });
+      let token = localStorage.getItem('jwtToken');
+      let formData = new FormData();
 
+      formData.append('input_files',this.files); // files是后端API需要的参数名
+
+      console.log(formData)
+      axios.post('/api/upload/upload_test', 
+     formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data' ,
+         Authorization: `Bearer ${token}`
+        }
+      }
+      )
+      .then(function(response) {
+        console.log(response); // 处理成功的响应
+      })
+      .catch(function(error) {
+        console.log(error); // 处理失败的错误
+      });
+
+           
+
+    
+        // axios({
+        //     method: 'POST',
+        //     url: '/api/upload/upload_files',
+        //     data: {
+        //       'input_files':formData,
+        //     // "query": messagesList, "dialogId": this.dialogId 
+        //     },
+        //      headers: {
+        //   'Content-Type': 'multipart/form-data' // 设置请求头为表单数据类型
+        // }
+        // })
+        // .then(response => {
+        //     console.log('/a', response.data)
+        //     return response.data
+        // }, error => {
+        //     console.log('错误', error.message)
+        // })
+    }
   },
   components: {
     MarkdownViewer,
     ContextMenu
-  }
+  },
 }
 </script>
 <style>
@@ -284,13 +347,13 @@ export default {
 }
 
 .bottom-container {
-  height: 100px;
-  padding: 0 10px;
-  width: calc(100% - 220px);
+  height: 130px;
+  width: calc(100% - 240px);
   max-width: 980px;
+
   box-sizing: border-box;
   position: absolute;
-  bottom: 0;
+  bottom: 0px;
   /* left: 50%; */
   /* Add left property */
   /* transform: translateX(0); */
@@ -300,10 +363,17 @@ export default {
 .input {
   border-radius: 5px;
   outline: none;
-  width: 100%;
+  width: 99%;
   padding: 10px;
+  position: absolute;
+  top: 5px;
   /* Add some padding to textarea */
   box-sizing: border-box;
+  resize: none;
+}
+.wenjian{
+   position:absolute;
+   bottom: 10px;
 }
 
 .preserve-spaces {
