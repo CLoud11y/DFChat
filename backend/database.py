@@ -4,6 +4,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import relationship, joinedload,subqueryload
+import shutil
+import logging
+
+logger = logging.getLogger(__name__)
 
 # 创建SQLite数据库引擎和会话工厂
 engine = create_engine("sqlite:///mydb.db", pool_size=20, max_overflow=0)
@@ -90,6 +94,13 @@ class DialogRecord(Base):
     def delete_by_id(session_id: int):
         session = SessionLocal()
         session_obj = session.query(DialogRecord).filter(DialogRecord.id == session_id).first()
+        # delete all files related to this session
+        file_dir = session_obj.file_path
+        if file_dir:
+            try:
+                shutil.rmtree(file_dir)
+            except Exception as e:
+                logger.exception(e)
         if session_obj:
             session.delete(session_obj)
             session.commit()

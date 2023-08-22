@@ -14,4 +14,4 @@ completion_engine_gpt35= "yourdeployment"
 
 openweathermap_api_key = "your key from openweathermap"
 # base_dir for saving uploaded files
-base_dir = "C:/Users/v-zheyuyu/vscodeProjects/DFChat/DFChat/backend/"
+base_dir = ""

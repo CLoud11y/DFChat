@@ -233,7 +233,7 @@ export default {
         formData.append("files", this.files[i]); 
       }
       console.log(formData.getAll("files"))
-      axios.post(`/api/upload/upload_files/${this.dialogId}`, 
+      axios.post(`/api/upload/upload_files/${this.dialogId ? this.dialogId : 0}`, 
      formData,
       {
         headers: {
