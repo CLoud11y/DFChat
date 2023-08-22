@@ -1,28 +1,25 @@
-from fastapi import APIRouter, Depends, File, Form
+from fastapi import APIRouter, Depends
 from typing import Any, Dict
 from utils.security import get_current_user
-from models import InputFiles, Query
+from models import Query
 from database import DialogRecord, User
 from config import base_dir
 import logging
 import os
 import json
-from typing import List, Optional
+from typing import List
 from fastapi import UploadFile
-from models import InputData
 
 upload_api = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@upload_api.post("/upload_files")
-async def upload_files(input_files: InputFiles, user: Dict[str, Any] = Depends(get_current_user)):
+@upload_api.post("/upload_files/{dialogId}")
+async def upload_files(files: List[UploadFile], dialogId: int, user: Dict[str, Any] = Depends(get_current_user)):
     '''
     save upload files to {base_dir}/upload_files/{user_name}/
     return dialogId
     '''
-    files = input_files.files
-    input_data = input_files.input_data
     user_name = user['sub']
     user = User.get_user_by_user_name(user_name)
     # make a dirctory for user according to user_name
@@ -32,25 +29,30 @@ async def upload_files(input_files: InputFiles, user: Dict[str, Any] = Depends(g
     # save all files
     for each in files:
         save_path = save_dir + each.filename
-        content = each.file.read()
+        content = await each.read()
+        await each.close()
         with open(save_path, "wb") as f:
             f.write(content)
     # append the messages saying that files have been uploaded
-    request_messages = [d.serialize() for d in input_data.query]
-    request_messages.append(Query(
-        role="assistant", content="All files have been uploaded successfully! Ask questions about them").serialize())
-    if input_data.dialogId:
-        DialogRecord.update_record(int(input_data.dialogId), json.dumps(
-            request_messages, ensure_ascii=False), file_path=save_dir)
-        return input_data.dialogId
+    record = DialogRecord.get_record_by_id(dialogId)
+    messages: List[Query] = json.loads(record.dialog_content)
+    messages.append(Query(role="assistant", content="All files have been uploaded successfully! Ask questions about them").serialize())
+    if dialogId:
+        DialogRecord.update_record(dialogId, json.dumps(messages, ensure_ascii=False), file_path=save_dir)
+        return str(dialogId)
     else:
-        dialog_record = DialogRecord.create_record(user.id, json.dumps(
-            request_messages, ensure_ascii=False), file_path=save_dir)
+        dialog_record = DialogRecord.create_record(user.id, json.dumps(messages, ensure_ascii=False), file_path=save_dir)
         return str(dialog_record.id)
 
 
-@upload_api.post("/upload_test")
-async def upload_test(input_files: bytes = File(...), user: Dict[str, Any] = Depends(get_current_user)):
-    logger.debug(input_files)
-    logger.debug(type(input_files))
+@upload_api.post("/upload_test/{dialogId}")
+async def upload_test(files: List[UploadFile], dialogId: int, user: Dict[str, Any] = Depends(get_current_user)):
+    logger.debug(files)
+    logger.debug(type(files))
+    logger.debug(dialogId)
+    logger.debug(type(dialogId))
+    record = DialogRecord.get_record_by_id(dialogId)
+    messages = json.loads(record.dialog_content)
+    logger.debug(messages)
+    logger.debug(type(messages))
     return "success"

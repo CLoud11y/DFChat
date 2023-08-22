@@ -19,6 +19,7 @@ from config import (
 )
 import os
 
+os.environ["OPENAI_API_TYPE"] = "azure"
 os.environ["OPENAI_API_KEY"] = api_key
 os.environ["OPENAI_API_BASE"] = api_url
 os.environ["OPENAI_API_VERSION"] = api_version
@@ -64,7 +65,9 @@ class QAChain():
         path = dialog.file_path
         loader = PyPDFDirectoryLoader(path=path)
         texts = loader.load_and_split(text_splitter=CharacterTextSplitter(chunk_size=1000, chunk_overlap=0))
-        embeddings = OpenAIEmbeddings(deployment="textembeddingada002")
+        embeddings = OpenAIEmbeddings(
+            deployment="textembeddingada002"
+            )
         docsearch = Chroma.from_documents(texts, embeddings)
         retriever = VectorStoreRetriever(vectorstore=docsearch)
 

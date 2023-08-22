@@ -229,11 +229,11 @@ export default {
           });
       let token = localStorage.getItem('jwtToken');
       let formData = new FormData();
-
-      formData.append('input_files',this.files); // files是后端API需要的参数名
-
-      console.log(formData)
-      axios.post('/api/upload/upload_test', 
+      for (let i = 0; i < this.files.length; i++) {
+        formData.append("files", this.files[i]); 
+      }
+      console.log(formData.getAll("files"))
+      axios.post(`/api/upload/upload_files/${this.dialogId}`, 
      formData,
       {
         headers: {
