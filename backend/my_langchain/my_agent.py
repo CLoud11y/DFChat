@@ -4,7 +4,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.document_loaders import PyPDFDirectoryLoader
+from langchain.document_loaders import PyPDFDirectoryLoader, DirectoryLoader, TextLoader, Docx2txtLoader
 from langchain.chains import ConversationalRetrievalChain
 from langchain.vectorstores.base import VectorStoreRetriever
 from typing import List
@@ -16,6 +16,7 @@ from config import (
     api_version,
     openweathermap_api_key,
     completion_engine_gpt35,
+    embeddings_deployment_name
 )
 import os
 
@@ -27,7 +28,7 @@ os.environ["OPENWEATHERMAP_API_KEY"] = openweathermap_api_key
 
 llm = AzureChatOpenAI(temperature=0, deployment_name=completion_engine_gpt35)
 tools = load_tools(["llm-math","openweathermap-api"], llm=llm)
-
+embeddings = OpenAIEmbeddings(deployment=embeddings_deployment_name)
 
 class MyAgent():
     def __init__(self, chat_history: List[Query], verbose=False, handle_parsing_errors=False) -> None:
@@ -63,11 +64,16 @@ class QAChain():
     def __init__(self, chat_history: List[Query], dialog_id : str) -> None:
         dialog = DialogRecord.get_record_by_id(int(dialog_id))
         path = dialog.file_path
-        loader = PyPDFDirectoryLoader(path=path)
-        texts = loader.load_and_split(text_splitter=CharacterTextSplitter(chunk_size=1000, chunk_overlap=0))
-        embeddings = OpenAIEmbeddings(
-            deployment="textembeddingada002"
-            )
+        loaders = [
+            PyPDFDirectoryLoader(path=path),
+            DirectoryLoader(path=path, loader_cls=TextLoader, loader_kwargs={"encoding":"utf-8"}, glob="**/*.txt"),
+            DirectoryLoader(path=path, loader_cls=Docx2txtLoader, glob="**/*.docx"),
+        ]
+        docs = []
+        for loader in loaders:
+            docs.extend(loader.load())
+        text_splitter=CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+        texts = text_splitter.split_documents(docs)
         docsearch = Chroma.from_documents(texts, embeddings)
         retriever = VectorStoreRetriever(vectorstore=docsearch)
 

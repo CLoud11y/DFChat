@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 @upload_api.post("/upload_files/{dialogId}")
 async def upload_files(files: List[UploadFile], dialogId: int, user: Dict[str, Any] = Depends(get_current_user)):
     '''
-    save upload files to {base_dir}/upload_files/{user_name}/
+    save upload files to {base_dir}/upload_files/{user_name}/{dialogId}
     return dialogId
     '''
     user_name = user['sub']
