@@ -27,12 +27,15 @@
       </div>
       <div class="bottom-container">
         <textarea class="input" @keydown.shift.enter="handleShiftEnter" v-model="input"
-          @keydown.enter.exact.prevent="sendMessage" placeholder="Type your message..." rows="4"></textarea>
+          @keydown.enter.exact.prevent="sendMessage" placeholder="Type your message..." rows="4">
+        </textarea>
          
-        <div class="wenjian">     <label>选择文件
-   
-      </label>    <input type="file" multiple @change="handleFileUpload($event)"/>
-         <button v-on:click="submitFiles()">上传</button></div>
+        <div v-if="is_uploaded.state == false" class="file">     
+          <label>选择文件</label>    
+          <input type="file" multiple @change="handleFileUpload($event)"/>
+          <button v-on:click="submitFiles()">上传</button>
+        </div>
+        <div v-else class="file">该对话已有文件上传</div>
       </div>
     </div>
   </div>
@@ -48,6 +51,7 @@ export default {
     const input = ref("");
     const dialogId = "";
     const files = [];
+    const is_uploaded = reactive({state: false})
     const messages = reactive([
       // { role: "assistant", content: "Welcome to the chat!" },
     ]);
@@ -81,7 +85,7 @@ export default {
       headers: { Accept: 'text/event-stream' },
     });
 
-    return { input, messages, gpt4SSEAPI, chatContainer, scrollToBottom, dialogId, histories,files };
+    return { input, messages, gpt4SSEAPI, chatContainer, scrollToBottom, dialogId, histories, files, is_uploaded};
   },
   methods: {
     async sendMessage() {
@@ -158,7 +162,7 @@ export default {
             }
           });
           if(isNewDialog){
-            this.histories.unshift({dialog_id: this.dialogId, dialog_content: JSON.parse(JSON.stringify(this.messages))})
+            this.histories.unshift({dialog_id: this.dialogId, dialog_content: JSON.parse(JSON.stringify(this.messages)), file_path: null})
           }
           console.log(response);
         } catch (error) {
@@ -178,17 +182,28 @@ export default {
       });
     },
     handleHistoryClick(history) {
-               this.scrollToBottom();
+      let token = localStorage.getItem('jwtToken');
+      this.scrollToBottom();
       this.messages.splice(0, this.messages.length);
       this.dialogId = history.dialog_id;
-      for (let i = 0; i < history.dialog_content.length; i++) {
-        this.messages.push(history.dialog_content[i]);
-      }
-  
-    },
+      axios.get(`/api/dialog/by_id/${this.dialogId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then((response) => {
+        console.log(response.data);
+        history.dialog_content = response.data["dialog_content"];
+        history.file_path = response.data["file_path"];
+        for (let i = 0; i < history.dialog_content.length; i++) {
+          this.messages.push(history.dialog_content[i]);
+        }
+        this.is_uploaded.state = history.file_path ? true : false;
+        console.log(this.is_uploaded.state)
+      }); 
+      
+     },
     createNewDialog() {
       this.messages.splice(0, this.messages.length);
       this.dialogId = "";
+      this.is_uploaded.state = false;
     },
     showContextMenu(event, index) {
       console.log(event);
@@ -218,15 +233,9 @@ export default {
     },
     handleFileUpload(event) {
       this.files = event.target.files;
-       console.log(this.files)
+      console.log(this.files)
     },
     async submitFiles() {
-        const messagesList = this.messages.map(message => {
-            return {
-              role: message.role,
-              content: message.content
-            };
-          });
       let token = localStorage.getItem('jwtToken');
       let formData = new FormData();
       for (let i = 0; i < this.files.length; i++) {
@@ -234,41 +243,31 @@ export default {
       }
       console.log(formData.getAll("files"))
       axios.post(`/api/upload/upload_files/${this.dialogId ? this.dialogId : 0}`, 
-     formData,
+      formData,
       {
         headers: {
           'Content-Type': 'multipart/form-data' ,
-         Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
       }
       )
-      .then(function(response) {
-        console.log(response); // 处理成功的响应
+      .then((response) => {
+        let isNewDialog = this.dialogId == ""
+        this.dialogId = response.data["dialogId"]
+        let path = response.data["file_path"]
+        console.log(response.data); // 处理成功的响应
+        alert("上传文件成功")
+        this.is_uploaded.state = true;
+        console.log(this.is_uploaded.state);
+        this.messages.push({role: "assistant", content: "All files have been uploaded successfully! Ask questions about them"});
+        if(isNewDialog){
+          this.histories.unshift({dialog_id: this.dialogId, dialog_content: JSON.parse(JSON.stringify(this.messages)), file_path: path});
+        }
       })
-      .catch(function(error) {
+      .catch((error) => {
         console.log(error); // 处理失败的错误
       });
 
-           
-
-    
-        // axios({
-        //     method: 'POST',
-        //     url: '/api/upload/upload_files',
-        //     data: {
-        //       'input_files':formData,
-        //     // "query": messagesList, "dialogId": this.dialogId 
-        //     },
-        //      headers: {
-        //   'Content-Type': 'multipart/form-data' // 设置请求头为表单数据类型
-        // }
-        // })
-        // .then(response => {
-        //     console.log('/a', response.data)
-        //     return response.data
-        // }, error => {
-        //     console.log('错误', error.message)
-        // })
     }
   },
   components: {
@@ -371,7 +370,7 @@ export default {
   box-sizing: border-box;
   resize: none;
 }
-.wenjian{
+.file{
    position:absolute;
    bottom: 10px;
 }
