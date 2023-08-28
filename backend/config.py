@@ -16,3 +16,5 @@ embeddings_deployment_name = "textembeddingada002"
 openweathermap_api_key = "your key from openweathermap"
 # base_dir for saving uploaded files
 base_dir = ""
+# max length for dialog record name
+RECORD_NAME_MAX_LEN = 40

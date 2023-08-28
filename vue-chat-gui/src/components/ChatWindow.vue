@@ -7,10 +7,11 @@
       <div class="history-item" v-for="(history, index) in histories" :key="index" @click.self=handleHistoryClick(history) @click.right.native="showContextMenu($event,index)" >
         <context-menu :ref="'contextmenu'+index">
           <button @click="deleteDialog(history.dialog_id)">删除</button>
+          <button @click="updateRecordName(history.dialog_id)">改名</button>
           <button @click="doNothing">取消</button>
           <!-- Add more menu items here -->
         </context-menu>
-        {{ history.dialog_content[0].content }}...
+        {{ history.record_name }}...
       </div>
     </div>
 
@@ -162,7 +163,13 @@ export default {
             }
           });
           if(isNewDialog){
-            this.histories.unshift({dialog_id: this.dialogId, dialog_content: JSON.parse(JSON.stringify(this.messages)), file_path: null})
+            let d_content = JSON.parse(JSON.stringify(this.messages));
+            this.histories.unshift({
+              dialog_id: this.dialogId, 
+              dialog_content: d_content, 
+              file_path: null,
+              record_name: d_content[0].content.slice(0, 40)
+            })
           }
           console.log(response);
         } catch (error) {
@@ -228,6 +235,22 @@ export default {
         }
       });
     },
+    updateRecordName(id) {
+      console.log(id)
+      let token = localStorage.getItem('jwtToken');
+      let update_name = prompt("Enter the name for this dialog", "new name");
+      axios.post(`/api/dialog/update_record_name`, {dialogId: id, record_name: update_name}, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then((response) => {
+        console.log(response.data)
+        for (let i = 0; i < this.histories.length; i++) {
+          if(this.histories[i].dialog_id == id){
+            this.histories[i].record_name = update_name;
+            break;
+          }
+        }
+      });
+    },
     doNothing(event) {
       event.preventDefault();
     },
@@ -252,16 +275,22 @@ export default {
       }
       )
       .then((response) => {
-        let isNewDialog = this.dialogId == ""
-        this.dialogId = response.data["dialogId"]
-        let path = response.data["file_path"]
+        let isNewDialog = this.dialogId == "";
+        this.dialogId = response.data["dialogId"];
+        let path = response.data["file_path"];
+        let name = response.data["record_name"];
         console.log(response.data); // 处理成功的响应
-        alert("上传文件成功")
+        alert("上传文件成功");
         this.is_uploaded.state = true;
         console.log(this.is_uploaded.state);
         this.messages.push({role: "assistant", content: "All files have been uploaded successfully! Ask questions about them"});
         if(isNewDialog){
-          this.histories.unshift({dialog_id: this.dialogId, dialog_content: JSON.parse(JSON.stringify(this.messages)), file_path: path});
+          this.histories.unshift({
+            dialog_id: this.dialogId, 
+            dialog_content: JSON.parse(JSON.stringify(this.messages)), 
+            file_path: path,
+            record_name: name
+          });
         }
       })
       .catch((error) => {

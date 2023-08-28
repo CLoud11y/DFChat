@@ -89,7 +89,7 @@ def update_dialog(dialog_id: str, user_name: str, whole_messages: List[Query]) -
         return ""
     else:
         user = User.get_user_by_user_name(user_name)
-        dialog_record = DialogRecord.create_record(user.id,json.dumps(whole_json_messages, ensure_ascii=False))
+        dialog_record = DialogRecord.create_record(user.id,json.dumps(whole_json_messages, ensure_ascii=False),record_name=whole_messages[0].content)
         return f"dialogIdComplexSubfix82jjivmpq90doqjwdoiwq:{str(dialog_record.id)}"
 
 

@@ -6,6 +6,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import relationship, joinedload,subqueryload
 import shutil
 import logging
+from config import RECORD_NAME_MAX_LEN
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,7 @@ class DialogRecord(Base):
     user = relationship("User", back_populates="dialogs")
     dialog_content = Column(Text)
     file_path = Column(Text)
+    record_name = Column(String(RECORD_NAME_MAX_LEN))
 
     @staticmethod
     def get_record_by_id(session_id: int) -> "DialogRecord":
@@ -66,9 +68,11 @@ class DialogRecord(Base):
         return user.dialogs
     
     @staticmethod
-    def create_record(user_id: int, dialog_content: str, file_path: str | None = None):
+    def create_record(user_id: int, dialog_content: str, record_name: str, file_path: str | None = None):
         session = SessionLocal()
-        dialog = DialogRecord(user_id=user_id, dialog_content=dialog_content, file_path=file_path)
+        # length limit
+        record_name = record_name[:RECORD_NAME_MAX_LEN]
+        dialog = DialogRecord(user_id=user_id, dialog_content=dialog_content, file_path=file_path, record_name=record_name)
         session.add(dialog)
         session.commit()
         session.refresh(dialog)
@@ -76,21 +80,33 @@ class DialogRecord(Base):
         return dialog
     
     @staticmethod
-    def update_record(session_id: int, dialog_content: str, file_path: str | None = None):
+    def update_record(session_id: int, dialog_content: str, file_path: str | None = None, record_name: str | None = None):
         session = SessionLocal()
         record = session.query(DialogRecord).filter(DialogRecord.id == session_id).first()
-        if record:
-            record.dialog_content = dialog_content
-            if file_path:
-                record.file_path = file_path
-            session.commit()
-            session.refresh(record)
-        else:
+        if not record:
             session.close()
             raise Exception("Record not found")
+        
+        record.dialog_content = dialog_content
+        if file_path:
+            record.file_path = file_path
+        if record_name:
+            record.record_name = record_name
+        session.commit()
+        session.refresh(record)   
         session.close()
         return record
     
+    @staticmethod
+    def update_record_name(session_id: int, record_name: str):
+        session = SessionLocal()
+        record = session.query(DialogRecord).filter(DialogRecord.id == session_id).first()
+        record.record_name = record_name[:RECORD_NAME_MAX_LEN]
+        session.commit()
+        session.refresh(record)   
+        session.close()
+        return True
+
     @staticmethod
     def delete_by_id(session_id: int):
         session = SessionLocal()

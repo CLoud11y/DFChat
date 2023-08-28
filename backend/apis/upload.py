@@ -18,12 +18,14 @@ logger = logging.getLogger(__name__)
 async def upload_files(files: List[UploadFile], dialogId: int, user: Dict[str, Any] = Depends(get_current_user)):
     '''
     save upload files to {base_dir}/upload_files/{user_name}/{dialogId}
-    return dialogId and file_path
+    return dialogId, file_path, record_name(if create a new dialog, else empty)
     '''
     user_name = user['sub']
     user = User.get_user_by_user_name(user_name)
+    record_name = ""
     if not dialogId:
-        dialog_record = DialogRecord.create_record(user.id, json.dumps([], ensure_ascii=False))
+        record_name = files[0].filename
+        dialog_record = DialogRecord.create_record(user.id, json.dumps([], ensure_ascii=False), record_name=record_name)
         dialogId = dialog_record.id
     # make a dirctory for user according to user_name and dialogId
     save_dir = base_dir + "upload_files/" + user_name + "/" + str(dialogId) + "/"
@@ -41,7 +43,7 @@ async def upload_files(files: List[UploadFile], dialogId: int, user: Dict[str, A
     messages: List[Query] = json.loads(record.dialog_content)
     messages.append(Query(role="assistant", content="All files have been uploaded successfully! Ask questions about them").serialize())
     DialogRecord.update_record(dialogId, json.dumps(messages, ensure_ascii=False), file_path=save_dir)
-    return {"dialogId": str(dialogId), "file_path": save_dir}
+    return {"dialogId": str(dialogId), "file_path": save_dir, "record_name": record_name}
 
 
 @upload_api.post("/upload_test/{dialogId}")

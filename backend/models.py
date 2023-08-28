@@ -11,3 +11,7 @@ class Query(BaseModel):
 class InputData(BaseModel):
     dialogId: Optional[str]
     query: List[Query]
+
+class RecordName(BaseModel):
+    dialogId: str
+    record_name: str
