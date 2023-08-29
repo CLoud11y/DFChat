@@ -44,9 +44,10 @@ def langchain_streamer(input_data: InputData,user_name:str) -> Generator[str, An
     request_messages = input_data.query
     message = request_messages[-1].content
     try:
-        # just for testing
-        if len(request_messages) > 1 and request_messages[-2].content == "All files have been uploaded successfully! Ask questions about them":
-            myAgent = QAChain(chat_history=chat_history, dialog_id = input_data.dialogId)
+        dialog = DialogRecord.get_record_by_id(int(input_data.dialogId))
+        file_path = dialog.file_path
+        if file_path:
+            myAgent = QAChain(chat_history=chat_history, file_path=file_path)
         else:
             myAgent = MyAgent(chat_history=chat_history, handle_parsing_errors=True)
         whole_response = myAgent.run(message)
