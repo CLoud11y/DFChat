@@ -77,8 +77,8 @@ This is a back-end project based on FastAPI, which provides API interface for th
 
 ## TODO List
 
-- [ ] Implement user registration and login function
-- [ ] Conversation record function
+- [x] Implement user registration and login function
+- [x] Conversation record function
 - [ ] Conversation export function
 - [ ] API cost statistics function
 
